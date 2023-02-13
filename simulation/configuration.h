@@ -4,6 +4,7 @@
 #include "tcp-tahoe.h"
 
 #include "ns3/core-module.h"
+#include "ns3/error-model.h"
 #include "ns3/ipv4-header.h"
 
 struct Configuration
@@ -11,51 +12,36 @@ struct Configuration
     /*********************************
      *TCP Configuration.
      *********************************/
-    /**
-     * @brief Tcp Variant.
-     * Either TcpTahoe or TcpReno.
-     */
-    std::string transport_prot = "TcpTahoe";
-    /** @brief Send buffer size. */
-    uint32_t snd_buf_size = 131072;
-    /** @brief Receive buffer size. */
-    uint32_t rcv_buf_size = 131072;
-    /** @brief Initial congestion window. */
-    uint32_t initial_cwnd = 1;
-    /** @brief Initial slow start threshold. */
-    uint32_t initial_ssthresh = 65535;
-    bool sack = true;
-    /** @brief Whether to disable Nagle's algorithm. */
-    bool disable_nagle = false;
+    std::string transport_prot = "TcpTahoe"; //!< Transport protocol.
+    uint32_t snd_buf_size = 131072;          //!< Send buffer size.
+    uint32_t rcv_buf_size = 131072;          //!< Receive buffer size.
+    uint32_t initial_cwnd = 1;               //!< Initial congestion window.
+    uint32_t initial_ssthresh = 65535;       //!< Initial slow start threshold.
+    bool sack = true;                        //!< Whether to enable Tcp SACK.
+    bool disable_nagle = false;              //!< Whether to disable Nagle's algorithm.
+    uint32_t mtu_bytes = 400;                //!< MTU in bytes.
+    uint32_t adu_bytes = 0;                  //!< Actual segment size (ADU) in bytes.
     /*********************************
      *Channel Configuration.
      *********************************/
-    /** @brief Error rate of the channel. */
-    double error_p = 0.0;
-    std::string bandwidth = "2Mbps";
-    std::string delay = "0.01ms";
-    std::string access_bandwidth = "10Mbps";
-    std::string access_delay = "45ms";
-    uint64_t mbytes_to_send = 0;
-    uint32_t mtu_bytes = 400;
-    /** @brief Duration of the simulation in seconds. */
-    double duration = 3.0;
+    double error_p = 0.0;                    //!< Error rate of the channel.
+    double delay = 0.01;                     //!< Delay of the channel in milliseconds.
+    std::string access_bandwidth = "10Mbps"; //!< Bandwidth of the channel.
+    std::string access_delay = "45ms";       //!< Delay of the channel in milliseconds.
+    std::string bandwidth = "2Mbps";         //!< Bandwidth of the channel.
+    uint64_t max_mbytes_to_send = 0; //!< Maximum number of megabytes to send. 0 means unlimited.
+    double duration = 3.0;           //!< Duration of the simulation in seconds.
     /*********************************
      * Simulation Configuration.
      *********************************/
-    /** @brief Identifier of the run. It is used as the randomness seed. */
-    uint32_t run = 0;
-    /** @brief Number of flows to simulate. */
-    uint16_t num_flows = 1;
+    uint32_t run = 0;     //!< Run identifier. Used to seed the random number generator.
+    uint16_t n_flows = 1; //!< Number of concurrent flows competing in the channel.
     /*********************************
      * Tracing Configuration.
      *********************************/
-    /** @brief Prefix of the output trace file. */
-    std::string prefix_file_name = "P2P-project";
-    /** @brief Enable or disable PCAP tracing. */
-    bool pcap_tracing = false;
-    /** @brief Enable or disable ASCII tracing. */
-    bool ascii_tracing = false;
+    std::string prefix_file_name = "P2P-project"; //!< Prefix of the output trace file.
+    bool pcap_tracing = false;                    //!< Enable or disable PCAP tracing.
+    bool ascii_tracing = false;                   //!< Enable or disable ASCII tracing.
 };
 
 std::ostream& operator<<(std::ostream& os, const Configuration& conf);

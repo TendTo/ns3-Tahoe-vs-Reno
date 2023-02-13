@@ -30,14 +30,17 @@ NS_LOG_COMPONENT_DEFINE("P2P-Project");
 int
 main(int argc, char* argv[])
 {
-    Tracer tracer;
     // Read the configuration from the command line and use it to initialize the default values
     Configuration conf;
     ParseConsoleArgs(conf, argc, argv);
     InitializeDefaultConfiguration(conf);
-    InitializeNode(conf, tracer);
 
-    NS_LOG_UNCOND(conf);
+    InitializeNode(conf);
+
+    // Set up tracing
+    Tracer tracer(conf, GraphDataUpdateType::Cwnd);
+    Simulator::Schedule(NanoSeconds(1), MakeCallback(&Tracer::ScheduleTracing, &tracer));
+    Simulator::ScheduleDestroy(MakeCallback(&Tracer::PrintGraphDataToFile, &tracer));
 
     NS_LOG_INFO("Run Simulation");
     Simulator::Stop(Seconds(conf.duration));

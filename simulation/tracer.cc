@@ -2,30 +2,32 @@
 
 using namespace ns3;
 
-Tracer::Tracer()
+NS_LOG_COMPONENT_DEFINE("Tracer");
+
+Tracer::Tracer(const Configuration& config)
+    : m_config(config),
+      m_updateType(GraphDataUpdateType::Cwnd)
 {
 }
 
-Tracer::Tracer(GraphDataUpdateType updateType)
+Tracer::Tracer(const Configuration& conf, const GraphDataUpdateType updateType)
+    : m_config(conf),
+      m_updateType(updateType)
 {
-    m_updateType = updateType;
 }
 
+//
 void
-Tracer::ScheduleTracing(const ApplicationContainer& apps)
+Tracer::ScheduleTracing()
 {
-    for (uint i = 0; i < apps.GetN(); i++)
-    {
-        Ptr<BulkSendApplication> senderApp = DynamicCast<BulkSendApplication>(apps.Get(i));
-        std::string nodeId = std::to_string(senderApp->GetNode()->GetId());
-        senderApp->GetSocket()->TraceConnect("CongestionWindow",
-                                             nodeId,
-                                             MakeCallback(&Tracer::CwndTracer, this));
-        senderApp->GetSocket()->TraceConnect("SlowStartThreshold",
-                                             nodeId,
-                                             MakeCallback(&Tracer::SsThreshTracer, this));
-    }
-    std::cout << "Tracing scheduled!" << std::endl;
+    NS_LOG_FUNCTION(this);
+
+    Config::Connect("/NodeList/*/$ns3::TcpL4Protocol/SocketList/0/CongestionWindow",
+                    MakeCallback(&Tracer::CwndTracer, this));
+    Config::Connect("/NodeList/*/$ns3::TcpL4Protocol/SocketList/0/SlowStartThreshold",
+                    MakeCallback(&Tracer::SsThreshTracer, this));
+
+    NS_LOG_INFO("Tracing scheduled");
 }
 
 const std::map<uint32_t, std::vector<GraphData>>&
@@ -37,11 +39,12 @@ Tracer::GetGraphData() const
 void
 Tracer::CwndTracer(std::string ctx, uint32_t oldval, uint32_t newval)
 {
-    std::cout << "cwnd"
-              << "\tctx: " << ctx << " oldval: " << oldval << " newval: " << newval << std::endl;
+    NS_LOG_FUNCTION(this << ctx << oldval << newval);
+
     uint32_t nodeId = GetNodeIdFromContext(ctx);
     m_cwndMap[nodeId] = newval;
-    std::cout << "cwnd updated successfully!\t" << m_cwndMap[nodeId] << std::endl;
+    NS_LOG_DEBUG("Node: " << nodeId << " Cwnd: " << newval);
+
     if (m_updateType == GraphDataUpdateType::Cwnd)
         UpdateGraphData(nodeId);
 }
@@ -49,10 +52,12 @@ Tracer::CwndTracer(std::string ctx, uint32_t oldval, uint32_t newval)
 void
 Tracer::SsThreshTracer(std::string ctx, uint32_t oldval, uint32_t newval)
 {
-    std::cout << "ssthresh"
-              << "\tctx: " << ctx << " oldval: " << oldval << " newval: " << newval << std::endl;
+    NS_LOG_FUNCTION(this << ctx << oldval << newval);
+
     uint32_t nodeId = GetNodeIdFromContext(ctx);
     m_ssThreshMap[nodeId] = newval;
+    NS_LOG_DEBUG("Node: " << nodeId << " SsThresh: " << newval);
+
     if (m_updateType == GraphDataUpdateType::SsThresh)
         UpdateGraphData(nodeId);
 }
@@ -60,29 +65,71 @@ Tracer::SsThreshTracer(std::string ctx, uint32_t oldval, uint32_t newval)
 uint32_t
 Tracer::GetNodeIdFromContext(std::string context)
 {
-    return std::stoul(context);
+    NS_LOG_FUNCTION(context);
+
+    std::size_t const n1 = context.find_first_of('/', 1);
+    std::size_t const n2 = context.find_first_of('/', n1 + 1);
+    return std::stoul(context.substr(n1 + 1, n2 - n1 - 1));
 }
 
 void
 Tracer::UpdateGraphData(uint32_t nodeId)
 {
-    std::cout << "Updating graph data for node: " << nodeId << std::endl;
-    GraphData graphData = {static_cast<uint32_t>(Simulator::Now().GetMilliSeconds()),
-                           m_cwndMap.count(nodeId) == 0 ? 0 : m_cwndMap.at(nodeId),
-                           m_ssThreshMap.count(nodeId) == 0 ? 0 : m_ssThreshMap.at(nodeId)};
+    NS_LOG_FUNCTION(this << nodeId);
+    GraphData graphData = {
+        static_cast<uint32_t>(Simulator::Now().GetMilliSeconds()),
+        m_cwndMap.count(nodeId) == 0 ? m_config.initial_cwnd : m_cwndMap.at(nodeId),
+        m_ssThreshMap.count(nodeId) == 0 ? m_config.initial_ssthresh : m_ssThreshMap.at(nodeId)};
     m_graphDataMap[nodeId].push_back(graphData);
+
+    NS_LOG_DEBUG("Node: " << nodeId << " Time: " << graphData.time << " Cwnd: " << graphData.cwnd
+                          << " SsThresh: " << graphData.ssthresh);
 }
 
 void
 Tracer::PrintGraphData() const
 {
-    std::cout << "FEST" << std::endl;
+    std::cout << "============= Results =============" << std::endl;
     for (const auto& [nodeId, graphDataVector] : m_graphDataMap)
     {
+        std::cout << "Node: " << nodeId << std::endl;
         for (const auto& [time, cwnd, ssthresh] : graphDataVector)
         {
-            std::cout << "Node: " << nodeId << " Time: " << time << " Cwnd: " << cwnd
-                      << " SsThresh: " << ssthresh << std::endl;
+            std::cout << "\tTime: " << time << " Cwnd: " << cwnd / m_config.adu_bytes
+                      << " SsThresh: " << ssthresh / m_config.adu_bytes << std::endl;
         }
     }
+    std::cout << "===================================" << std::endl;
+}
+
+void
+Tracer::PrintGraphDataToFile() const
+{
+    Gnuplot plot(m_config.prefix_file_name + ".png");
+    plot.SetTitle("TCP Congestion Window");
+    plot.SetTerminal("png");
+    plot.SetLegend("Time (ms)", "Congestion Window (segments)");
+
+    for (const auto& [nodeId, graphDataVector] : m_graphDataMap)
+    {
+        // Skip nodes that have no data or the sink node, that has only one data point
+        if (graphDataVector.empty() || graphDataVector.size() == 1)
+            continue;
+
+        Gnuplot2dDataset cwndDataset;
+        cwndDataset.SetTitle("Node " + std::to_string(nodeId) + " Cwnd");
+        Gnuplot2dDataset ssthreshDataset;
+        ssthreshDataset.SetTitle("Node " + std::to_string(nodeId) + " SsThresh");
+        for (const auto& [time, cwnd, ssthresh] : graphDataVector)
+        {
+            cwndDataset.Add(time, cwnd / m_config.adu_bytes);
+            ssthreshDataset.Add(time, ssthresh / m_config.adu_bytes);
+        }
+        plot.AddDataset(cwndDataset);
+        plot.AddDataset(ssthreshDataset);
+    }
+
+    std::ofstream plotFile(m_config.prefix_file_name + ".plt");
+    plot.GenerateOutput(plotFile);
+    plotFile.close();
 }
