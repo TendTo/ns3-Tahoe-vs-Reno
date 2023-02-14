@@ -1,8 +1,6 @@
 #include "simulator-helper.h"
 
-using namespace ns3;
-
-NS_LOG_COMPONENT_DEFINE("P2P-Project-SimulatorHelper");
+NS_LOG_COMPONENT_DEFINE("SimulatorHelper");
 
 SimulatorHelper::SimulatorHelper(const Configuration& conf, Tracer& tracer)
     : m_port(9),

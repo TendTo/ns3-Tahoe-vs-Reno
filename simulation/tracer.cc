@@ -1,12 +1,16 @@
 #include "tracer.h"
 
-using namespace ns3;
-
 NS_LOG_COMPONENT_DEFINE("Tracer");
+
+inline GraphDataUpdateType
+operator|(const GraphDataUpdateType& lhs, const GraphDataUpdateType& rhs)
+{
+    return static_cast<GraphDataUpdateType>(static_cast<int>(lhs) | static_cast<int>(rhs));
+}
 
 Tracer::Tracer(const Configuration& config)
     : m_config(config),
-      m_updateType(GraphDataUpdateType::Cwnd)
+      m_updateType(GraphDataUpdateType::All)
 {
 }
 
@@ -50,7 +54,7 @@ Tracer::CwndTracer(std::string ctx, uint32_t oldval, uint32_t newval)
     m_cwndMap[nodeId] = newval;
     NS_LOG_DEBUG("Node: " << nodeId << " Cwnd: " << newval);
 
-    if (m_updateType == GraphDataUpdateType::Cwnd)
+    if (m_updateType & GraphDataUpdateType::Cwnd)
         UpdateGraphData(nodeId);
 }
 
@@ -63,7 +67,7 @@ Tracer::SsThreshTracer(std::string ctx, uint32_t oldval, uint32_t newval)
     m_ssThreshMap[nodeId] = newval;
     NS_LOG_DEBUG("Node: " << nodeId << " SsThresh: " << newval);
 
-    if (m_updateType == GraphDataUpdateType::SsThresh)
+    if (m_updateType & GraphDataUpdateType::SsThresh)
         UpdateGraphData(nodeId);
 }
 
@@ -72,10 +76,12 @@ Tracer::TcpQueueTracer(uint32_t oldval, uint32_t newval)
 {
     NS_LOG_FUNCTION(this << oldval << newval);
 
+    if (!(m_updateType & GraphDataUpdateType::QueueSize))
+        return;
+
     ReceiverGraphData graphData = {static_cast<uint32_t>(Simulator::Now().GetMilliSeconds()),
                                    newval};
     m_receiverGraphData.push_back(graphData);
-
     NS_LOG_DEBUG("Time: " << graphData.time << " TcpQueueSize: " << graphData.tcpQueueSize);
 }
 

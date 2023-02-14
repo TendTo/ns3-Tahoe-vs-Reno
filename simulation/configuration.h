@@ -1,12 +1,18 @@
 #ifndef P2P_SIMULATION_CONFIGURATION_H
 #define P2P_SIMULATION_CONFIGURATION_H
 
+#include "tcp-tahoe-loss-recovery.h"
 #include "tcp-tahoe.h"
 
 #include "ns3/core-module.h"
 #include "ns3/error-model.h"
 #include "ns3/ipv4-header.h"
 
+using namespace ns3;
+
+/**
+ * @brief Struct to store the configuration of the simulation.
+ */
 struct Configuration
 {
     /*********************************
@@ -30,6 +36,8 @@ struct Configuration
     std::string r_bandwidth = "10Mbps"; //!< Bandwidth of the channel of the receiver.
     std::string r_delay = "40ms";       //!< Delay of the channel of the receiver.
     uint32_t tcp_queue_size = 25;       //!< Size of the queue at the TCP level.
+    // https://groups.google.com/g/ns-3-users/c/e15_YvL-7v0
+    // uint32_t device_queue_size = 100;
     /*********************************
      * Simulation Configuration.
      *********************************/
@@ -45,9 +53,25 @@ struct Configuration
     bool ascii_tracing = false;                   //!< Enable or disable ASCII tracing.
 };
 
+/**
+ * @brief Overload of the << operator to print the configuration.
+ * @param os Output stream.
+ * @param conf Configuration.
+ * @return Output stream.
+ */
 std::ostream& operator<<(std::ostream& os, const Configuration& conf);
 
+/**
+ * @brief Parse the command line arguments and store them in the configuration.
+ * @param conf Configuration object to store the values in.
+ * @param argc Number of arguments.
+ * @param argv Arguments.
+ */
 void ParseConsoleArgs(Configuration& conf, int argc, char* argv[]);
+/**
+ * @brief Initialize the default attributes of the simulation with the configuration.
+ * @param configuration Configuration.
+ */
 void InitializeDefaultConfiguration(const Configuration& configuration);
 
 #endif // P2P_SIMULATION_CONFIGURATION_H

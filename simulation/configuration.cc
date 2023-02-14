@@ -1,8 +1,6 @@
 #include "configuration.h"
 
-using namespace ns3;
-
-NS_LOG_COMPONENT_DEFINE("P2P-Project-Configuration");
+NS_LOG_COMPONENT_DEFINE("Configuration");
 
 static uint32_t
 GetTcpSegmentSize(const Configuration& conf)
