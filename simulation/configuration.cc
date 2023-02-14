@@ -64,21 +64,11 @@ SetTcpAttributes(const Configuration& conf)
 }
 
 static void
-SetPointToPointAttributes(const Configuration& conf)
+SetQueueAttributes(const Configuration& conf)
 {
-    Ptr<UniformRandomVariable> uv = CreateObject<UniformRandomVariable>();
-    Ptr<RateErrorModel> error_model = CreateObject<RateErrorModel>();
-    error_model->SetRandomVariable(uv);
-    error_model->SetUnit(RateErrorModel::ERROR_UNIT_PACKET);
-    error_model->SetRate(conf.error_p);
-
-    // The rate of the link
-    Config::SetDefault("ns3::PointToPointNetDevice::DataRate",
-                       DataRateValue(conf.access_bandwidth));
-    // The error rate
-    Config::SetDefault("ns3::PointToPointNetDevice::ReceiveErrorModel", PointerValue(error_model));
-    // The delay
-    Config::SetDefault("ns3::PointToPointChannel::Delay", StringValue(conf.access_delay));
+    // The maximum number of packets that can be queued
+    Config::SetDefault("ns3::RedQueueDisc::MaxSize",
+                       StringValue(std::to_string(conf.tcp_queue_size) + "p"));
 }
 
 std::ostream&
@@ -87,8 +77,10 @@ operator<<(std::ostream& os, const Configuration& conf)
     return os << "Configuration: {" << std::endl
               << "\tTransport protocol: " << conf.transport_prot << std::endl
               << "\tError probability: " << conf.error_p << std::endl
-              << "\tBandwidth: " << conf.bandwidth << std::endl
-              << "\tDelay: " << conf.delay << std::endl
+              << "\tSender bandwidth: " << conf.s_bandwidth << std::endl
+              << "\tSender delay " << conf.s_delay << std::endl
+              << "\tReceiver bandwidth: " << conf.r_bandwidth << std::endl
+              << "\tReceiver delay: " << conf.r_delay << std::endl
               << "\tTracing: " << conf.ascii_tracing << std::endl
               << "\tPrefix file name: " << conf.prefix_file_name << std::endl
               << "\tMegabytes to send (MB): " << conf.max_mbytes_to_send << std::endl
@@ -98,8 +90,6 @@ operator<<(std::ostream& os, const Configuration& conf)
               << "\tRun: " << conf.run << std::endl
               << "\tSack: " << conf.sack << std::endl
               << "\tPcap: " << conf.pcap_tracing << std::endl
-              << "\tAccess bandwidth: " << conf.access_bandwidth << std::endl
-              << "\tAccess delay: " << conf.access_delay << std::endl
               << "}" << std::endl;
 }
 
@@ -111,10 +101,10 @@ ParseConsoleArgs(Configuration& conf, int argc, char* argv[])
                  "Transport protocol to use: TcpTahoe, TcpReno",
                  conf.transport_prot);
     cmd.AddValue("error_p", "Packet error rate", conf.error_p);
-    cmd.AddValue("bandwidth", "Bottleneck bandwidth", conf.bandwidth);
-    cmd.AddValue("delay", "Bottleneck delay", conf.delay);
-    cmd.AddValue("access_bandwidth", "Access link bandwidth", conf.access_bandwidth);
-    cmd.AddValue("access_delay", "Access link delay", conf.access_delay);
+    cmd.AddValue("s_bandwidth", "Sender link bandwidth", conf.s_bandwidth);
+    cmd.AddValue("s_delay", "Sender link delay", conf.s_delay);
+    cmd.AddValue("r_bandwidth", "Receiver link bandwidth", conf.r_bandwidth);
+    cmd.AddValue("r_delay", "Receiver link delay", conf.r_delay);
     cmd.AddValue("prefix_name", "Prefix of output trace file", conf.prefix_file_name);
     cmd.AddValue("data", "Max number of Megabytes of data to transmit", conf.max_mbytes_to_send);
     cmd.AddValue("mtu", "Size of IP packets to send (bytes)", conf.mtu_bytes);
@@ -124,6 +114,8 @@ ParseConsoleArgs(Configuration& conf, int argc, char* argv[])
     cmd.AddValue("pcap_tracing", "Enable or disable PCAP tracing", conf.pcap_tracing);
     cmd.AddValue("ascii_tracing", "Flag to enable/disable tracing", conf.ascii_tracing);
     cmd.AddValue("sack", "Enable or disable SACK option", conf.sack);
+    cmd.AddValue("device_queue_size", "Size of the device queue", conf.device_queue_size);
+    cmd.AddValue("tcp_queue_size", "Size of the tcp queue", conf.tcp_queue_size);
     cmd.Parse(argc, argv);
 
     conf.adu_bytes = GetTcpSegmentSize(conf);
@@ -140,5 +132,5 @@ InitializeDefaultConfiguration(const Configuration& conf)
 
     SetTcpVariant(conf);
     SetTcpAttributes(conf);
-    SetPointToPointAttributes(conf);
+    SetQueueAttributes(conf);
 }

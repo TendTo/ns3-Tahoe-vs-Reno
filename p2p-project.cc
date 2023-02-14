@@ -14,7 +14,7 @@
  */
 
 #include "simulation/configuration.h"
-#include "simulation/node.h"
+#include "simulation/simulator-helper.h"
 #include "simulation/tcp-tahoe.h"
 #include "simulation/tracer.h"
 
@@ -35,7 +35,8 @@ main(int argc, char* argv[])
     ParseConsoleArgs(conf, argc, argv);
     InitializeDefaultConfiguration(conf);
 
-    InitializeNode(conf);
+    SimulatorHelper simHelper(conf);
+    simHelper.Setup();
 
     // Set up tracing
     Tracer tracer(conf, GraphDataUpdateType::Cwnd);
@@ -43,9 +44,7 @@ main(int argc, char* argv[])
     Simulator::ScheduleDestroy(MakeCallback(&Tracer::PrintGraphDataToFile, &tracer));
 
     NS_LOG_INFO("Run Simulation");
-    Simulator::Stop(Seconds(conf.duration));
-    Simulator::Run();
-    Simulator::Destroy();
+    simHelper.Run();
     NS_LOG_INFO("The simulation has ended");
 
     return 0;

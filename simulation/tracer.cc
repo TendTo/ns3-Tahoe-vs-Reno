@@ -16,7 +16,6 @@ Tracer::Tracer(const Configuration& conf, const GraphDataUpdateType updateType)
 {
 }
 
-//
 void
 Tracer::ScheduleTracing()
 {
@@ -30,10 +29,16 @@ Tracer::ScheduleTracing()
     NS_LOG_INFO("Tracing scheduled");
 }
 
-const std::map<uint32_t, std::vector<GraphData>>&
-Tracer::GetGraphData() const
+const std::map<uint32_t, std::vector<SenderGraphData>>&
+Tracer::GetSenderGraphData() const
 {
-    return m_graphDataMap;
+    return m_senderGraphData;
+}
+
+const std::vector<ReceiverGraphData>&
+Tracer::GetReceiverGraphData() const
+{
+    return m_receiverGraphData;
 }
 
 void
@@ -62,6 +67,18 @@ Tracer::SsThreshTracer(std::string ctx, uint32_t oldval, uint32_t newval)
         UpdateGraphData(nodeId);
 }
 
+void
+Tracer::TcpQueueTracer(uint32_t oldval, uint32_t newval)
+{
+    NS_LOG_FUNCTION(this << oldval << newval);
+
+    ReceiverGraphData graphData = {static_cast<uint32_t>(Simulator::Now().GetMilliSeconds()),
+                                   newval};
+    m_receiverGraphData.push_back(graphData);
+
+    NS_LOG_DEBUG("Time: " << graphData.time << " TcpQueueSize: " << graphData.tcpQueueSize);
+}
+
 uint32_t
 Tracer::GetNodeIdFromContext(std::string context)
 {
@@ -76,11 +93,11 @@ void
 Tracer::UpdateGraphData(uint32_t nodeId)
 {
     NS_LOG_FUNCTION(this << nodeId);
-    GraphData graphData = {
+    SenderGraphData graphData = {
         static_cast<uint32_t>(Simulator::Now().GetMilliSeconds()),
         m_cwndMap.count(nodeId) == 0 ? m_config.initial_cwnd : m_cwndMap.at(nodeId),
         m_ssThreshMap.count(nodeId) == 0 ? m_config.initial_ssthresh : m_ssThreshMap.at(nodeId)};
-    m_graphDataMap[nodeId].push_back(graphData);
+    m_senderGraphData[nodeId].push_back(graphData);
 
     NS_LOG_DEBUG("Node: " << nodeId << " Time: " << graphData.time << " Cwnd: " << graphData.cwnd
                           << " SsThresh: " << graphData.ssthresh);
@@ -90,7 +107,7 @@ void
 Tracer::PrintGraphData() const
 {
     std::cout << "============= Results =============" << std::endl;
-    for (const auto& [nodeId, graphDataVector] : m_graphDataMap)
+    for (const auto& [nodeId, graphDataVector] : m_senderGraphData)
     {
         std::cout << "Node: " << nodeId << std::endl;
         for (const auto& [time, cwnd, ssthresh] : graphDataVector)
@@ -110,7 +127,7 @@ Tracer::PrintGraphDataToFile() const
     plot.SetTerminal("png");
     plot.SetLegend("Time (ms)", "Congestion Window (segments)");
 
-    for (const auto& [nodeId, graphDataVector] : m_graphDataMap)
+    for (const auto& [nodeId, graphDataVector] : m_senderGraphData)
     {
         // Skip nodes that have no data or the sink node, that has only one data point
         if (graphDataVector.empty() || graphDataVector.size() == 1)
@@ -127,6 +144,17 @@ Tracer::PrintGraphDataToFile() const
         }
         plot.AddDataset(cwndDataset);
         plot.AddDataset(ssthreshDataset);
+    }
+
+    if (!m_receiverGraphData.empty())
+    {
+        Gnuplot2dDataset receiverDataset;
+        receiverDataset.SetTitle("Queue Size");
+        for (const auto& [time, queueSize] : m_receiverGraphData)
+        {
+            receiverDataset.Add(time, queueSize);
+        }
+        plot.AddDataset(receiverDataset);
     }
 
     std::ofstream plotFile(m_config.prefix_file_name + ".plt");

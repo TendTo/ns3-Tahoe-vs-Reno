@@ -1,6 +1,6 @@
 # Return early if no sources in the subdirectory
 set(main_src p2p-project)
-set(header_files simulation/tcp-tahoe simulation/node simulation/configuration simulation/tracer)
+set(header_files simulation/tcp-tahoe simulation/simulator-helper simulation/configuration simulation/tracer)
 set(source_files ${main_src} ${header_files})
 set(target_prefix scratch_P2P_)
 
