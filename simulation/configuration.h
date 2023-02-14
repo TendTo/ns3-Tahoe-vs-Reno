@@ -49,8 +49,9 @@ struct Configuration
      * Tracing Configuration.
      *********************************/
     std::string prefix_file_name = "P2P-project"; //!< Prefix of the output trace file.
-    bool pcap_tracing = false;                    //!< Enable or disable PCAP tracing.
-    bool ascii_tracing = false;                   //!< Enable or disable ASCII tracing.
+    std::string graph_output = "png"; //!< Output format of the graph. Can be "png" or "svg".
+    bool pcap_tracing = false;        //!< Enable or disable PCAP tracing.
+    bool ascii_tracing = false;       //!< Enable or disable ASCII tracing.
 };
 
 /**

@@ -137,7 +137,7 @@ class Tracer
     void UpdateGraphData(uint32_t nodeId);
 
   private:
-    const Configuration& m_config;              //!< Configuration
+    const Configuration& m_conf;              //!< Configuration
     const GraphDataUpdateType m_updateType;     //!< Aggregation type
     std::map<uint32_t, uint32_t> m_cwndMap;     //!< Congestion window outut
     std::map<uint32_t, uint32_t> m_ssThreshMap; //!< Slow start threshold outut

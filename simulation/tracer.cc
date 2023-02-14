@@ -8,14 +8,14 @@ operator|(const GraphDataUpdateType& lhs, const GraphDataUpdateType& rhs)
     return static_cast<GraphDataUpdateType>(static_cast<int>(lhs) | static_cast<int>(rhs));
 }
 
-Tracer::Tracer(const Configuration& config)
-    : m_config(config),
+Tracer::Tracer(const Configuration& conf)
+    : m_conf(conf),
       m_updateType(GraphDataUpdateType::All)
 {
 }
 
 Tracer::Tracer(const Configuration& conf, const GraphDataUpdateType updateType)
-    : m_config(conf),
+    : m_conf(conf),
       m_updateType(updateType)
 {
 }
@@ -101,8 +101,8 @@ Tracer::UpdateGraphData(uint32_t nodeId)
     NS_LOG_FUNCTION(this << nodeId);
     SenderGraphData graphData = {
         static_cast<uint32_t>(Simulator::Now().GetMilliSeconds()),
-        m_cwndMap.count(nodeId) == 0 ? m_config.initial_cwnd : m_cwndMap.at(nodeId),
-        m_ssThreshMap.count(nodeId) == 0 ? m_config.initial_ssthresh : m_ssThreshMap.at(nodeId)};
+        m_cwndMap.count(nodeId) == 0 ? m_conf.initial_cwnd : m_cwndMap.at(nodeId),
+        m_ssThreshMap.count(nodeId) == 0 ? m_conf.initial_ssthresh : m_ssThreshMap.at(nodeId)};
     m_senderGraphData[nodeId].push_back(graphData);
 
     NS_LOG_DEBUG("Node: " << nodeId << " Time: " << graphData.time << " Cwnd: " << graphData.cwnd
@@ -118,8 +118,8 @@ Tracer::PrintGraphData() const
         std::cout << "Node: " << nodeId << std::endl;
         for (const auto& [time, cwnd, ssthresh] : graphDataVector)
         {
-            std::cout << "\tTime: " << time << " Cwnd: " << cwnd / m_config.adu_bytes
-                      << " SsThresh: " << ssthresh / m_config.adu_bytes << std::endl;
+            std::cout << "\tTime: " << time << " Cwnd: " << cwnd / m_conf.adu_bytes
+                      << " SsThresh: " << ssthresh / m_conf.adu_bytes << std::endl;
         }
     }
     std::cout << "===================================" << std::endl;
@@ -129,10 +129,12 @@ void
 Tracer::PrintGraphDataToFile() const
 {
     Gnuplot2dDataset::SetDefaultStyle(Gnuplot2dDataset::LINES_POINTS);
-    Gnuplot plot(m_config.prefix_file_name + ".png");
+    Gnuplot plot(m_conf.prefix_file_name + "." + m_conf.graph_output);
     plot.SetTitle("TCP Congestion Window");
-    plot.SetTerminal("png");
+    plot.SetTerminal(m_conf.graph_output);
     plot.SetLegend("Time (ms)", "Congestion Window (segments)");
+    plot.SetExtra(
+        "set object 1 rectangle from screen 0,0 to screen 1,1 fillcolor rgb \"white\" behind");
 
     for (const auto& [nodeId, graphDataVector] : m_senderGraphData)
     {
@@ -146,8 +148,8 @@ Tracer::PrintGraphDataToFile() const
         ssthreshDataset.SetTitle("Node " + std::to_string(nodeId) + " SsThresh");
         for (const auto& [time, cwnd, ssthresh] : graphDataVector)
         {
-            cwndDataset.Add(time, cwnd / m_config.adu_bytes);
-            ssthreshDataset.Add(time, ssthresh / m_config.adu_bytes);
+            cwndDataset.Add(time, cwnd / m_conf.adu_bytes);
+            ssthreshDataset.Add(time, ssthresh / m_conf.adu_bytes);
         }
         plot.AddDataset(cwndDataset);
         plot.AddDataset(ssthreshDataset);
@@ -164,7 +166,7 @@ Tracer::PrintGraphDataToFile() const
         plot.AddDataset(receiverDataset);
     }
 
-    std::ofstream plotFile(m_config.prefix_file_name + ".plt");
+    std::ofstream plotFile(m_conf.prefix_file_name + ".plt");
     plot.GenerateOutput(plotFile);
     plotFile.close();
 }

@@ -88,6 +88,7 @@ operator<<(std::ostream& os, const Configuration& conf)
               << "\tNumber of flows: " << conf.n_flows << std::endl
               << "\tDuration (s): " << conf.duration << std::endl
               << "\tRun: " << conf.run << std::endl
+              << "\tGraph output: " << conf.graph_output << std::endl
               << "\tSack: " << conf.sack << std::endl
               << "\tPcap: " << conf.pcap_tracing << std::endl
               << "}" << std::endl;
@@ -120,6 +121,7 @@ ParseConsoleArgs(Configuration& conf, int argc, char* argv[])
                  "Maximum number of megabytes to send (MB)",
                  conf.max_mbytes_to_send);
     cmd.AddValue("prefix_file_name", "Prefix file name", conf.prefix_file_name);
+    cmd.AddValue("graph_output", "The type of image to output: png, svg", conf.graph_output);
     cmd.AddValue("ascii_tracing", "Enable ASCII tracing", conf.ascii_tracing);
     cmd.AddValue("pcap_tracing", "Enable Pcap tracing", conf.pcap_tracing);
     cmd.Parse(argc, argv);
