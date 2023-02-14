@@ -24,6 +24,8 @@
 #include "ns3/log.h"
 #include "ns3/simulator.h"
 
+using namespace ns3;
+
 NS_LOG_COMPONENT_DEFINE("TcpTahoe");
 NS_OBJECT_ENSURE_REGISTERED(TcpTahoe);
 
@@ -40,10 +42,10 @@ TcpTahoe::TcpTahoe(const TcpTahoe& socket)
 ns3::TypeId
 TcpTahoe::GetTypeId()
 {
-    static ns3::TypeId tid = ns3::TypeId("ns3::TcpTahoe")
-                                 .SetParent<ns3::TcpCongestionOps>()
-                                 .SetGroupName("Internet")
-                                 .AddConstructor<TcpTahoe>();
+    static TypeId tid = TypeId("ns3::TcpTahoe")
+                            .SetParent<TcpCongestionOps>()
+                            .SetGroupName("Internet")
+                            .AddConstructor<TcpTahoe>();
     return tid;
 }
 
@@ -54,7 +56,7 @@ TcpTahoe::GetName() const
 }
 
 void
-TcpTahoe::IncreaseWindow(ns3::Ptr<ns3::TcpSocketState> tcb, uint32_t segmentsAcked)
+TcpTahoe::IncreaseWindow(Ptr<TcpSocketState> tcb, uint32_t segmentsAcked)
 {
     NS_LOG_FUNCTION(this << tcb << segmentsAcked);
 
@@ -72,22 +74,21 @@ TcpTahoe::IncreaseWindow(ns3::Ptr<ns3::TcpSocketState> tcb, uint32_t segmentsAck
 }
 
 uint32_t
-TcpTahoe::GetSsThresh(ns3::Ptr<const ns3::TcpSocketState> tcb, uint32_t bytesInFlight)
+TcpTahoe::GetSsThresh(Ptr<const TcpSocketState> tcb, uint32_t bytesInFlight)
 {
     NS_LOG_FUNCTION(this << tcb << bytesInFlight);
 
-    // In Linux, it is written as:  return max(tp->snd_cwnd >> 1U, 2U);
     return std::max<uint32_t>(2 * tcb->m_segmentSize, tcb->m_cWnd / 2);
 }
 
-ns3::Ptr<ns3::TcpCongestionOps>
+ns3::Ptr<TcpCongestionOps>
 TcpTahoe::Fork()
 {
-    return ns3::CopyObject<TcpTahoe>(this);
+    return CopyObject<TcpTahoe>(this);
 }
 
 void
-TcpTahoe::SlowStart(ns3::Ptr<ns3::TcpSocketState> tcb, uint32_t segmentsAcked)
+TcpTahoe::SlowStart(Ptr<TcpSocketState> tcb, uint32_t segmentsAcked)
 {
     NS_LOG_FUNCTION(this << tcb << segmentsAcked);
 
@@ -105,7 +106,7 @@ TcpTahoe::SlowStart(ns3::Ptr<ns3::TcpSocketState> tcb, uint32_t segmentsAcked)
 }
 
 void
-TcpTahoe::CongestionAvoidance(ns3::Ptr<ns3::TcpSocketState> tcb, uint32_t segmentsAcked)
+TcpTahoe::CongestionAvoidance(Ptr<TcpSocketState> tcb, uint32_t segmentsAcked)
 {
     NS_LOG_FUNCTION(this << tcb << segmentsAcked);
 

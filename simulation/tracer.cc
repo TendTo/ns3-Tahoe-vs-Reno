@@ -122,6 +122,7 @@ Tracer::PrintGraphData() const
 void
 Tracer::PrintGraphDataToFile() const
 {
+    Gnuplot2dDataset::SetDefaultStyle(Gnuplot2dDataset::LINES_POINTS);
     Gnuplot plot(m_config.prefix_file_name + ".png");
     plot.SetTitle("TCP Congestion Window");
     plot.SetTerminal("png");

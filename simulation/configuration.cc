@@ -28,11 +28,11 @@ SetTcpVariant(const Configuration& conf)
     if (conf.transport_prot.compare("TcpTahoe") == 0)
     {
         tcp_variant = TypeIdValue(TcpTahoe::GetTypeId());
-        recovery = TypeIdValue(TypeId::LookupByName("ns3::TcpClassicRecovery"));
+        recovery = TypeIdValue(TcpTahoeLossRecovery::GetTypeId());
     }
     else if (conf.transport_prot.compare("TcpReno") == 0)
     {
-        // tcp_variant = TypeIdValue(TcpReno::GetTypeId());
+        tcp_variant = TypeIdValue(TypeId::LookupByName("ns3::TcpLinuxReno"));
         recovery = TypeIdValue(TypeId::LookupByName("ns3::TcpClassicRecovery"));
     }
     else

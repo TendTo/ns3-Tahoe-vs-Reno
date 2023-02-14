@@ -61,11 +61,12 @@ class TcpTahoe : public ns3::TcpCongestionOps
      * Slow start phase handler
      * \param tcb Transmission Control Block of the connection
      * \param segmentsAcked count of segments acked
-     * \return Number of segments acked minus the difference between the receiver and sender Cwnd
+     * \return Number of segments acked minus the difference between the receiver and sender
+     * Cwnd
      */
     virtual void SlowStart(ns3::Ptr<ns3::TcpSocketState> tcb, uint32_t segmentsAcked);
     virtual void CongestionAvoidance(ns3::Ptr<ns3::TcpSocketState> tcb, uint32_t segmentsAcked);
-  
+
   private:
     uint32_t m_cWndCnt = 0; //!< Counter for the number of segments acked
 };
