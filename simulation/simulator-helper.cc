@@ -4,26 +4,11 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE("P2P-Project-SimulatorHelper");
 
-static void
-DevicePacketsInQueueTrace(std::string ctx, uint32_t oldval, uint32_t newval)
-{
-    if (newval == 0 || oldval == 0)
-        return;
-    NS_LOG_UNCOND("DeviceQueue:\t" << ctx << "\t" << oldval << "\t" << newval);
-}
-
-static void
-TcPacketsInQueueTrace(std::string ctx, uint32_t oldval, uint32_t newval)
-{
-    if (newval == 0 || oldval == 0)
-        return;
-    NS_LOG_UNCOND("TcpQueue:\t" << ctx << "\t" << oldval << "\t" << newval);
-}
-
-SimulatorHelper::SimulatorHelper(const Configuration& conf)
+SimulatorHelper::SimulatorHelper(const Configuration& conf, Tracer& tracer)
     : m_port(9),
       m_conf(conf),
-      m_isInitialized(false)
+      m_isInitialized(false),
+      m_tracer(tracer)
 {
     m_ipv4Helper.SetBase("10.0.1.0", "255.255.255.0");
 }
@@ -34,7 +19,6 @@ SimulatorHelper::Setup()
     SetupNodes();
     SetupSenderChannel();
     SetupReceiverChannel();
-    SetupRouterQueue();
 
     NS_LOG_INFO("Initialize Global Routing.");
     Ipv4GlobalRoutingHelper::PopulateRoutingTables();
@@ -109,42 +93,17 @@ SimulatorHelper::SetupReceiverChannel()
     m_r_pointToPoint.SetDeviceAttribute("DataRate", StringValue(m_conf.r_bandwidth));
     m_r_pointToPoint.SetChannelAttribute("Delay", StringValue(m_conf.r_delay));
     m_r_pointToPoint.SetDeviceAttribute("ReceiveErrorModel", PointerValue(error_model));
-    // m_r_pointToPoint.SetQueue("ns3::DropTailQueue",
-    //                           "MaxSize",
-    //                           StringValue(std::to_string(m_conf.device_queue_size) + "p"));
+
     NetDeviceContainer devices = m_r_pointToPoint.Install(m_gateway.Get(0), m_receivers.Get(0));
     m_ipv4Helper.NewNetwork();
     m_ipv4Helper.Assign(devices);
-
-    // Ptr<PointToPointNetDevice> ptpnd = DynamicCast<PointToPointNetDevice>(device.Get(1));
-    // Ptr<Queue<Packet>> queue = ptpnd->GetQueue();
-    // queue->TraceConnect("PacketsInQueue", "Receiver", MakeCallback(&DevicePacketsInQueueTrace));
-    // Ptr<PointToPointNetDevice> ptpnd2 = DynamicCast<PointToPointNetDevice>(device.Get(0));
-    // Ptr<Queue<Packet>> queue2 = ptpnd2->GetQueue();
-    // queue2->TraceConnect("PacketsInQueue", "Gateway", MakeCallback(&DevicePacketsInQueueTrace));
 
     TrafficControlHelper tch;
     tch.SetRootQueueDisc("ns3::RedQueueDisc");
     tch.Uninstall(devices);
     QueueDiscContainer qDiscs = tch.Install(devices);
-    qDiscs.Get(1)->TraceConnect("PacketsInQueue", "1", MakeCallback(&TcPacketsInQueueTrace));
-    qDiscs.Get(0)->TraceConnect("PacketsInQueue", "0", MakeCallback(&TcPacketsInQueueTrace));
-}
-
-void
-SimulatorHelper::SetupRouterQueue()
-{
-    NS_LOG_FUNCTION(this);
-
-    NS_LOG_INFO("Create router queue");
-
-    // TrafficControlHelper tch;
-    // tch.SetRootQueueDisc("ns3::RedQueueDisc");
-    // uint32_t lastDeviceId = m_receivers.Get(0)->GetNDevices() - 1;
-    // tch.Uninstall(m_receivers.Get(0)->GetDevice(lastDeviceId));
-    // QueueDiscContainer qDiscs = tch.Install(m_receivers.Get(0)->GetDevice(lastDeviceId));
-    // qDiscs.Get(0)->TraceConnectWithoutContext("PacketsInQueue",
-    //                                           MakeCallback(&TcPacketsInQueueTrace));
+    qDiscs.Get(0)->TraceConnectWithoutContext("PacketsInQueue",
+                                              MakeCallback(&Tracer::TcpQueueTracer, &m_tracer));
 }
 
 void
@@ -179,6 +138,9 @@ SimulatorHelper::SetupReceiverApplications()
 void
 SimulatorHelper::SetupTracing()
 {
+    Simulator::Schedule(NanoSeconds(1), MakeCallback(&Tracer::ScheduleTracing, &m_tracer));
+    Simulator::ScheduleDestroy(MakeCallback(&Tracer::PrintGraphDataToFile, &m_tracer));
+
     // Set up tracing if enabled
     if (m_conf.ascii_tracing)
     {

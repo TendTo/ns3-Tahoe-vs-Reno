@@ -20,7 +20,7 @@ struct Configuration
     uint32_t mtu_bytes = 1500;               //!< MTU in bytes.
     uint32_t adu_bytes = 0;                  //!< Actual segment size (ADU) in bytes.
     bool sack = true;                        //!< Whether to enable Tcp SACK.
-    bool disable_nagle = false;              //!< Whether to disable Nagle's algorithm.
+    bool nagle = false;                      //!< Whether to disable Nagle's algorithm.
     /*********************************
      *Channel Configuration.
      *********************************/
@@ -29,8 +29,7 @@ struct Configuration
     std::string s_delay = "40ms";       //!< Delay of the channel of the sender.
     std::string r_bandwidth = "10Mbps"; //!< Bandwidth of the channel of the receiver.
     std::string r_delay = "40ms";       //!< Delay of the channel of the receiver.
-    uint32_t device_queue_size = 2;     //!< Size of the queue in the channel.
-    uint32_t tcp_queue_size = 2;        //!< Size of the queue at the TCP level.
+    uint32_t tcp_queue_size = 25;       //!< Size of the queue at the TCP level.
     /*********************************
      * Simulation Configuration.
      *********************************/

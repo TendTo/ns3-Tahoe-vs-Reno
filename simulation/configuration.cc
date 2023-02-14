@@ -60,7 +60,9 @@ SetTcpAttributes(const Configuration& conf)
     Config::SetDefault("ns3::TcpSocket::InitialSlowStartThreshold",
                        UintegerValue(conf.initial_ssthresh));
     // Disable Nagle's algorithm
-    Config::SetDefault("ns3::TcpSocket::TcpNoDelay", BooleanValue(conf.disable_nagle));
+    Config::SetDefault("ns3::TcpSocket::TcpNoDelay", BooleanValue(!conf.nagle));
+    // Enable SACK
+    Config::SetDefault("ns3::TcpSocketBase::Sack", BooleanValue(conf.sack));
 }
 
 static void
@@ -100,22 +102,28 @@ ParseConsoleArgs(Configuration& conf, int argc, char* argv[])
     cmd.AddValue("transport_prot",
                  "Transport protocol to use: TcpTahoe, TcpReno",
                  conf.transport_prot);
+    cmd.AddValue("s_buf_size", "Sender buffer size (bytes)", conf.snd_buf_size);
+    cmd.AddValue("r_buf_size", "Receiver buffer size (bytes)", conf.rcv_buf_size);
+    cmd.AddValue("cwnd", "Initial congestion window (segments)", conf.initial_cwnd);
+    cmd.AddValue("ssthresh", "Initial slow start threshold (segments)", conf.initial_ssthresh);
+    cmd.AddValue("mtu", "Size of IP packets to send (bytes)", conf.mtu_bytes);
+    cmd.AddValue("sack", "Enable SACK", conf.sack);
+    cmd.AddValue("nagle", "Enable Nagle's algorithm", conf.nagle);
     cmd.AddValue("error_p", "Packet error rate", conf.error_p);
     cmd.AddValue("s_bandwidth", "Sender link bandwidth", conf.s_bandwidth);
     cmd.AddValue("s_delay", "Sender link delay", conf.s_delay);
     cmd.AddValue("r_bandwidth", "Receiver link bandwidth", conf.r_bandwidth);
     cmd.AddValue("r_delay", "Receiver link delay", conf.r_delay);
-    cmd.AddValue("prefix_name", "Prefix of output trace file", conf.prefix_file_name);
-    cmd.AddValue("data", "Max number of Megabytes of data to transmit", conf.max_mbytes_to_send);
-    cmd.AddValue("mtu", "Size of IP packets to send (bytes)", conf.mtu_bytes);
-    cmd.AddValue("num_flows", "Number of flows", conf.n_flows);
-    cmd.AddValue("duration", "Duration of the simulation (sec)", conf.duration);
-    cmd.AddValue("run", "Run index (for setting repeatable seeds)", conf.run);
-    cmd.AddValue("pcap_tracing", "Enable or disable PCAP tracing", conf.pcap_tracing);
-    cmd.AddValue("ascii_tracing", "Flag to enable/disable tracing", conf.ascii_tracing);
-    cmd.AddValue("sack", "Enable or disable SACK option", conf.sack);
-    cmd.AddValue("device_queue_size", "Size of the device queue", conf.device_queue_size);
-    cmd.AddValue("tcp_queue_size", "Size of the tcp queue", conf.tcp_queue_size);
+    cmd.AddValue("tcp_queue_size", "TCP queue size (packets)", conf.tcp_queue_size);
+    cmd.AddValue("run", "Run id", conf.run);
+    cmd.AddValue("n_flows", "Number of flows", conf.n_flows);
+    cmd.AddValue("duration", "Duration of the simulation (s)", conf.duration);
+    cmd.AddValue("max_mbytes_to_send",
+                 "Maximum number of megabytes to send (MB)",
+                 conf.max_mbytes_to_send);
+    cmd.AddValue("prefix_file_name", "Prefix file name", conf.prefix_file_name);
+    cmd.AddValue("ascii_tracing", "Enable ASCII tracing", conf.ascii_tracing);
+    cmd.AddValue("pcap_tracing", "Enable Pcap tracing", conf.pcap_tracing);
     cmd.Parse(argc, argv);
 
     conf.adu_bytes = GetTcpSegmentSize(conf);

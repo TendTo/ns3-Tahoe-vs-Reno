@@ -2,6 +2,7 @@
 #define P2P_SIMULATION_SIMULATOR_HELPER_H
 
 #include "configuration.h"
+#include "tracer.h"
 
 #include "ns3/bulk-send-helper.h"
 #include "ns3/core-module.h"
@@ -14,7 +15,7 @@
 class SimulatorHelper
 {
   public:
-    SimulatorHelper(const Configuration& conf);
+    SimulatorHelper(const Configuration& conf, Tracer& tracer);
 
     void Setup();
     void Run();
@@ -23,7 +24,6 @@ class SimulatorHelper
     void SetupNodes();
     void SetupSenderChannel();
     void SetupReceiverChannel();
-    void SetupRouterQueue();
     void SetupSenderApplications();
     void SetupReceiverApplications();
     void SetupTracing();
@@ -32,6 +32,7 @@ class SimulatorHelper
     const uint32_t m_port;
     const Configuration& m_conf;
     bool m_isInitialized;
+    Tracer m_tracer;
     ns3::NodeContainer m_senders;
     ns3::NodeContainer m_receivers;
     ns3::NodeContainer m_gateway;

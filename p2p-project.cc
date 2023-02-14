@@ -35,13 +35,12 @@ main(int argc, char* argv[])
     ParseConsoleArgs(conf, argc, argv);
     InitializeDefaultConfiguration(conf);
 
-    SimulatorHelper simHelper(conf);
-    simHelper.Setup();
-
     // Set up tracing
     Tracer tracer(conf, GraphDataUpdateType::Cwnd);
-    Simulator::Schedule(NanoSeconds(1), MakeCallback(&Tracer::ScheduleTracing, &tracer));
-    Simulator::ScheduleDestroy(MakeCallback(&Tracer::PrintGraphDataToFile, &tracer));
+
+
+    SimulatorHelper simHelper(conf, tracer);
+    simHelper.Setup();
 
     NS_LOG_INFO("Run Simulation");
     simHelper.Run();
