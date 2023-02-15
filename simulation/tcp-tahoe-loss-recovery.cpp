@@ -45,9 +45,13 @@ TcpTahoeLossRecovery::EnterRecovery(Ptr<TcpSocketState> tcb,
     NS_LOG_FUNCTION(this << tcb << dupAckCount << unAckDataCount << deliveredBytes);
 
     NS_LOG_INFO("Entering recovery. LastAcked sq: " << tcb->m_lastAckedSeq);
-    NS_LOG_LOGIC("ssThresh set to half of cwnd. cwnd set to one");
+    NS_LOG_LOGIC("Store the ssThresh set to half of cwnd. cwnd set to one. ssThresh set to zero "
+                 "temporarily");
+    // Store the halved ssThresh value
     m_half_ssThresh = tcb->m_cWnd / 2;
+    // Set the ssThresh to zero, to avoid the sudden increase of cwnd at the end of the recovery
     tcb->m_ssThresh = 0;
+    // Set the cwnd to one
     tcb->m_cWnd = 1;
     tcb->m_cWndInfl = 0;
 }
@@ -67,6 +71,7 @@ TcpTahoeLossRecovery::ExitRecovery(Ptr<TcpSocketState> tcb)
     NS_LOG_FUNCTION(this << tcb);
 
     NS_LOG_INFO("Exiting recovery");
+    // Restore the ssThresh value to the halved value
     tcb->m_ssThresh = m_half_ssThresh;
 }
 

@@ -57,7 +57,7 @@ Move to the `scratch` folder and clone the repository:
 
 ```bash
 cd ns-allinone-3.37/ns-3.37/scratch
-git clone
+git clone git@github.com:TendTo/ns3-Tahoe-vs-Reno.git
 ```
 
 Lastly, move back to the `ns-3.37` folder and build the simulation:
