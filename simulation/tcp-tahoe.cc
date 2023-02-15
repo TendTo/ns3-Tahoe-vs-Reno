@@ -75,8 +75,9 @@ TcpTahoe::SlowStart(Ptr<TcpSocketState> tcb, uint32_t segmentsAcked)
         // Set the cwnd to the minimum of the following:
         // 1. The current cwnd + the number of segments acked * segment size
         // 2. The ssThresh
+        uint32_t realSegmentsAcked = std::min(segmentsAcked, tcb->m_bytesInFlight.Get() / tcb->m_segmentSize + 1);
         tcb->m_cWnd =
-            std::min((sndCwnd + (segmentsAcked * tcb->m_segmentSize)), (uint32_t)tcb->m_ssThresh);
+            std::min((sndCwnd + (realSegmentsAcked * tcb->m_segmentSize)), (uint32_t)tcb->m_ssThresh);
         NS_LOG_INFO("In SlowStart, updated to cwnd " << tcb->m_cWnd << " ssthresh "
                                                      << tcb->m_ssThresh);
     }

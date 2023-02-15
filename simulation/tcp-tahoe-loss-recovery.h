@@ -77,6 +77,7 @@ class TcpTahoeLossRecovery : public TcpRecoveryOps
     Ptr<TcpRecoveryOps> Fork() override;
 
   private:
+    uint32_t m_half_ssThresh;          //!< ssthresh value calculated by having the current cwnd.
     TcpTahoe m_tahoeCongestionControl; //!< The TCP Tahoe congestion control algorithm.
 };
 

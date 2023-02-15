@@ -46,7 +46,8 @@ TcpTahoeLossRecovery::EnterRecovery(Ptr<TcpSocketState> tcb,
 
     NS_LOG_INFO("Entering recovery. LastAcked sq: " << tcb->m_lastAckedSeq);
     NS_LOG_LOGIC("ssThresh set to half of cwnd. cwnd set to one");
-    tcb->m_ssThresh = tcb->m_cWnd / 2;
+    m_half_ssThresh = tcb->m_cWnd / 2;
+    tcb->m_ssThresh = 0;
     tcb->m_cWnd = 1;
     tcb->m_cWndInfl = 0;
 }
@@ -58,7 +59,6 @@ TcpTahoeLossRecovery::DoRecovery(Ptr<TcpSocketState> tcb, uint32_t deliveredByte
 
     NS_LOG_INFO("Entering recovery. LastAcked sq: " << tcb->m_lastAckedSeq);
     NS_LOG_LOGIC("Apply tcp tahoe congestion control algorithm");
-    m_tahoeCongestionControl.IncreaseWindow(tcb, deliveredBytes / tcb->m_segmentSize);
 }
 
 void
@@ -67,6 +67,7 @@ TcpTahoeLossRecovery::ExitRecovery(Ptr<TcpSocketState> tcb)
     NS_LOG_FUNCTION(this << tcb);
 
     NS_LOG_INFO("Exiting recovery");
+    tcb->m_ssThresh = m_half_ssThresh;
 }
 
 Ptr<TcpRecoveryOps>
