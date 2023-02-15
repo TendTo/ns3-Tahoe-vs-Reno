@@ -51,7 +51,7 @@ SimulatorHelper::SetupNodes()
     NS_LOG_FUNCTION(this);
 
     NS_LOG_INFO("Create nodes");
-    m_senders.Create(m_conf.n_flows);
+    m_senders.Create(m_conf.n_tcp_tahoe + m_conf.n_tcp_reno);
     m_receivers.Create(1);
     m_gateway.Create(1);
 
@@ -67,11 +67,26 @@ SimulatorHelper::SetupSenderChannel()
     NS_LOG_INFO("Create sender channel");
     m_s_pointToPoint.SetDeviceAttribute("DataRate", StringValue(m_conf.s_bandwidth));
     m_s_pointToPoint.SetChannelAttribute("Delay", StringValue(m_conf.s_delay));
-    for (uint32_t i = 0; i < m_conf.n_flows; i++)
+    for (uint32_t i = 0; i < m_senders.GetN(); i++)
     {
         NetDeviceContainer devices = m_s_pointToPoint.Install(m_senders.Get(i), m_gateway.Get(0));
         m_ipv4Helper.NewNetwork();
         m_ipv4Helper.Assign(devices);
+    }
+
+    for (uint32_t i = 0; i < m_conf.n_tcp_tahoe; i++)
+    {
+        Config::Set("/NodeList/" + std::to_string(i) + "/$ns3::TcpL4Protocol/SocketType",
+                    TypeIdValue(TcpTahoe::GetTypeId()));
+        Config::Set("/NodeList/" + std::to_string(i) + "/$ns3::TcpL4Protocol/RecoveryType",
+                    TypeIdValue(TcpTahoeLossRecovery::GetTypeId()));
+    }
+    for (uint32_t i = m_conf.n_tcp_tahoe; i < m_conf.n_tcp_tahoe + m_conf.n_tcp_reno; i++)
+    {
+        Config::Set("/NodeList/" + std::to_string(i) + "/$ns3::TcpL4Protocol/SocketType",
+                    TypeIdValue(TypeId::LookupByName("ns3::TcpLinuxReno")));
+        Config::Set("/NodeList/" + std::to_string(i) + "/$ns3::TcpL4Protocol/RecoveryType",
+                    TypeIdValue(TypeId::LookupByName("ns3::TcpClassicRecovery")));
     }
 }
 

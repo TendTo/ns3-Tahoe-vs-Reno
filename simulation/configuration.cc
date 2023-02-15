@@ -19,31 +19,6 @@ GetTcpSegmentSize(const Configuration& conf)
 }
 
 static void
-SetTcpVariant(const Configuration& conf)
-{
-    // Set the tcp variant to use
-    TypeIdValue tcp_variant, recovery;
-    if (conf.transport_prot.compare("TcpTahoe") == 0)
-    {
-        tcp_variant = TypeIdValue(TcpTahoe::GetTypeId());
-        recovery = TypeIdValue(TcpTahoeLossRecovery::GetTypeId());
-    }
-    else if (conf.transport_prot.compare("TcpReno") == 0)
-    {
-        tcp_variant = TypeIdValue(TypeId::LookupByName("ns3::TcpLinuxReno"));
-        recovery = TypeIdValue(TypeId::LookupByName("ns3::TcpClassicRecovery"));
-    }
-    else
-    {
-        NS_LOG_ERROR("Invalid transport protocol: " << conf.transport_prot << std::endl
-                                                    << "Expected: TcpTahoe, TcpReno");
-        exit(1);
-    }
-    Config::SetDefault("ns3::TcpL4Protocol::SocketType", tcp_variant);
-    Config::SetDefault("ns3::TcpL4Protocol::RecoveryType", recovery);
-}
-
-static void
 SetTcpAttributes(const Configuration& conf)
 {
     // The maximum transmit buffer size
@@ -75,7 +50,8 @@ std::ostream&
 operator<<(std::ostream& os, const Configuration& conf)
 {
     return os << "Configuration: {" << std::endl
-              << "\tTransport protocol: " << conf.transport_prot << std::endl
+              << "\tNumber of Tcp Tahoe nodes: " << conf.n_tcp_tahoe << std::endl
+              << "\tNumber of Tcp Reno nodes: " << conf.n_tcp_reno << std::endl
               << "\tError probability: " << conf.error_p << std::endl
               << "\tSender bandwidth: " << conf.s_bandwidth << std::endl
               << "\tSender delay " << conf.s_delay << std::endl
@@ -85,7 +61,6 @@ operator<<(std::ostream& os, const Configuration& conf)
               << "\tPrefix file name: " << conf.prefix_file_name << std::endl
               << "\tMegabytes to send (MB): " << conf.max_mbytes_to_send << std::endl
               << "\tMTU (bytes): " << conf.mtu_bytes << std::endl
-              << "\tNumber of flows: " << conf.n_flows << std::endl
               << "\tDuration (s): " << conf.duration << std::endl
               << "\tRun: " << conf.run << std::endl
               << "\tGraph output: " << conf.graph_output << std::endl
@@ -98,9 +73,8 @@ void
 ParseConsoleArgs(Configuration& conf, int argc, char* argv[])
 {
     CommandLine cmd(__FILE__);
-    cmd.AddValue("transport_prot",
-                 "Transport protocol to use: TcpTahoe, TcpReno",
-                 conf.transport_prot);
+    cmd.AddValue("n_tcp_tahoe", "Number of Tcp Tahoe nodes", conf.n_tcp_tahoe);
+    cmd.AddValue("n_tcp_reno", "Number of Tcp Reno nodes", conf.n_tcp_reno);
     cmd.AddValue("s_buf_size", "Sender buffer size (bytes)", conf.snd_buf_size);
     cmd.AddValue("r_buf_size", "Receiver buffer size (bytes)", conf.rcv_buf_size);
     cmd.AddValue("cwnd", "Initial congestion window (segments)", conf.initial_cwnd);
@@ -115,7 +89,6 @@ ParseConsoleArgs(Configuration& conf, int argc, char* argv[])
     cmd.AddValue("r_delay", "Receiver link delay", conf.r_delay);
     cmd.AddValue("tcp_queue_size", "TCP queue size (packets)", conf.tcp_queue_size);
     cmd.AddValue("run", "Run id", conf.run);
-    cmd.AddValue("n_flows", "Number of flows", conf.n_flows);
     cmd.AddValue("duration", "Duration of the simulation (s)", conf.duration);
     cmd.AddValue("max_mbytes_to_send",
                  "Maximum number of megabytes to send (MB)",
@@ -138,7 +111,6 @@ InitializeDefaultConfiguration(const Configuration& conf)
     SeedManager::SetSeed(1);
     SeedManager::SetRun(conf.run);
 
-    SetTcpVariant(conf);
     SetTcpAttributes(conf);
     SetQueueAttributes(conf);
 }

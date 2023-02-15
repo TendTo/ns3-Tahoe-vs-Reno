@@ -25,10 +25,15 @@ Tracer::ScheduleTracing()
 {
     NS_LOG_FUNCTION(this);
 
-    Config::Connect("/NodeList/*/$ns3::TcpL4Protocol/SocketList/0/CongestionWindow",
-                    MakeCallback(&Tracer::CwndTracer, this));
-    Config::Connect("/NodeList/*/$ns3::TcpL4Protocol/SocketList/0/SlowStartThreshold",
-                    MakeCallback(&Tracer::SsThreshTracer, this));
+    for (uint32_t i = 0; i < m_conf.n_tcp_tahoe + m_conf.n_tcp_reno; ++i)
+    {
+        Config::Connect("/NodeList/" + std::to_string(i) +
+                            "/$ns3::TcpL4Protocol/SocketList/0/CongestionWindow",
+                        MakeCallback(&Tracer::CwndTracer, this));
+        Config::Connect("/NodeList/" + std::to_string(i) +
+                            "/$ns3::TcpL4Protocol/SocketList/0/SlowStartThreshold",
+                        MakeCallback(&Tracer::SsThreshTracer, this));
+    }
 
     NS_LOG_INFO("Tracing scheduled");
 }
@@ -63,6 +68,8 @@ Tracer::SsThreshTracer(std::string ctx, uint32_t oldval, uint32_t newval)
 {
     NS_LOG_FUNCTION(this << ctx << oldval << newval);
 
+    if (newval == 0)
+        return;
     uint32_t nodeId = GetNodeIdFromContext(ctx);
     m_ssThreshMap[nodeId] = newval;
     NS_LOG_DEBUG("Node: " << nodeId << " SsThresh: " << newval);
@@ -138,10 +145,6 @@ Tracer::PrintGraphDataToFile() const
 
     for (const auto& [nodeId, graphDataVector] : m_senderGraphData)
     {
-        // Skip nodes that have no data or the sink node, that has only one data point
-        if (graphDataVector.empty() || graphDataVector.size() == 1)
-            continue;
-
         Gnuplot2dDataset cwndDataset;
         cwndDataset.SetTitle("Node " + std::to_string(nodeId) + " Cwnd");
         Gnuplot2dDataset ssthreshDataset;

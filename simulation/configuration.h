@@ -18,15 +18,16 @@ struct Configuration
     /*********************************
      *TCP Configuration.
      *********************************/
-    std::string transport_prot = "TcpTahoe"; //!< Transport protocol.
-    uint32_t snd_buf_size = 131072;          //!< Send buffer size.
-    uint32_t rcv_buf_size = 131072;          //!< Receive buffer size.
-    uint32_t initial_cwnd = 1;               //!< Initial congestion window.
-    uint32_t initial_ssthresh = 65535;       //!< Initial slow start threshold.
-    uint32_t mtu_bytes = 1500;               //!< MTU in bytes.
-    uint32_t adu_bytes = 0;                  //!< Actual segment size (ADU) in bytes.
-    bool sack = true;                        //!< Whether to enable Tcp SACK.
-    bool nagle = false;                      //!< Whether to disable Nagle's algorithm.
+    uint32_t n_tcp_tahoe = 1;          //!< Number of TCP Tahoe nodes.
+    uint32_t n_tcp_reno = 1;           //!< Number of TCP Reno nodes.
+    uint32_t snd_buf_size = 131072;    //!< Send buffer size.
+    uint32_t rcv_buf_size = 131072;    //!< Receive buffer size.
+    uint32_t initial_cwnd = 1;         //!< Initial congestion window.
+    uint32_t initial_ssthresh = 65535; //!< Initial slow start threshold.
+    uint32_t mtu_bytes = 1500;         //!< MTU in bytes.
+    uint32_t adu_bytes = 0;            //!< Actual segment size (ADU) in bytes.
+    bool sack = true;                  //!< Whether to enable Tcp SACK.
+    bool nagle = false;                //!< Whether to disable Nagle's algorithm.
     /*********************************
      *Channel Configuration.
      *********************************/
@@ -42,7 +43,6 @@ struct Configuration
      * Simulation Configuration.
      *********************************/
     uint32_t run = 0;                //!< Run identifier. Used to seed the random number generator.
-    uint16_t n_flows = 1;            //!< Number of concurrent flows competing in the channel.
     double duration = 3.0;           //!< Duration of the simulation in seconds.
     uint64_t max_mbytes_to_send = 0; //!< Maximum number of megabytes to send. 0 means unlimited.
     /*********************************
